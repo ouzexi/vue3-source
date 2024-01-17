@@ -1,5 +1,5 @@
 export let activeEffect = undefined;
-class ReactiveEffect {
+export class ReactiveEffect {
     public parent = null;
     // 表示当前effect默认为激活状态
     public active = true;
@@ -75,6 +75,10 @@ export function track(target, type, key) {
     if(!dep) {
         depsMap.set(key, (dep = new Set()));
     }
+    trackEffects(dep);
+}
+
+export function trackEffects(dep) {
     // 去重 比如某个effect多次用到某个key 只需跟踪一次：effect(() => { state.name; state.name; state.name;  })
     let shouldTrack = !dep.has(activeEffect);
     // 双向记录 属性记录多个effect / effect记录多个属性对应的Set
@@ -89,6 +93,12 @@ export function trigger(target, type, key, value, oldValue) {
     // 说明触发的值没有在模板中使用 不需要触发更新
     if(!depsMap) return;
     let effects = depsMap.get(key);
+    if(effects) {
+        triggerEffects(effects);
+    }
+}
+
+export function triggerEffects(effects) {
     // 在执行之前 先拷贝一份来执行 不要关联引用
     /* 
     比如effect调用run方法时 会先调用cleanupEffect清空上一次执行依赖的属性
@@ -116,7 +126,7 @@ export function trigger(target, type, key, value, oldValue) {
                 effect.run();
             }
         }
-    })
+    });
 }
 
 function cleanupEffect(effect) {

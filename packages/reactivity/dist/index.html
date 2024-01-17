@@ -11,33 +11,16 @@
     <script>
         // effect表示副作用函数 如果此函数依赖的数据发生变化会触发执行
         // reactive将数据变成响应式 proxy
-        const { effect, reactive } = VueReactivity;
-        const data = { flag: true, name: 'jw', age: 30, address: { num: 10 } };
-        const state = reactive(data);
-        let waiting = false;
-        let runner = effect(() => {
-            app.innerHTML = state.age;
-        }, {
-            // 自定义调度器 自己决定如何更新
-            scheduler() {
-                console.log('run');
-                if(!waiting) {
-                    waiting = true;
-                    setTimeout(() => {
-                        console.log('only called once')
-                        runner();
-                        waiting = false;
-                    })
-                }
-            }
-        });
+        const { effect, reactive, computed } = VueReactivity;
+        const state = reactive({ firstName: '小', lastName: '明' });
+        const fullName = computed(() => (state.firstName + state.lastName));
+        effect(() => {
+            app.innerHTML = fullName.value;
+        })
 
-        state.age = 1000;
-        state.age = 2000;
-        state.age = 3000;
-        state.age = 4000;
-        state.age = 5000;
-        console.log(state.address)
+        setTimeout(() => {
+            state.firstName = '朱'
+        }, 1000)
     </script>
 </body>
 </html>
