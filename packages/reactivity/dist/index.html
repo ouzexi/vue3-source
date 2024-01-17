@@ -14,18 +14,18 @@
         const { effect, reactive } = VueReactivity;
         const data = { flag: true, name: 'jw', age: 30 };
         const state = reactive(data);
-        effect(() => {
-            console.log('render')
-            app.innerHTML = state.flag ? state.name : state.age;
+        let waiting = false;
+        let runner = effect(() => {
+            app.innerHTML = state.age;
         });
 
+        runner.effect.stop();
         setTimeout(() => {
-            state.flag = false;
+            state.age = 1000;
             setTimeout(() => {
-                console.log('修改name，原则上不更新，因为模板没有用到')
-                state.name = 'zf'
-            }, 2000);
-        }, 2000)
+                runner()
+            }, 2000)
+        }, 1000)
     </script>
 </body>
 </html>

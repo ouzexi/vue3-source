@@ -37,6 +37,14 @@ class ReactiveEffect {
             activeEffect = this.parent;
         }
     }
+
+    // 停止effect的收集 即不触发更新
+    stop() {
+        if(this.active) {
+            this.active = false;
+            cleanupEffect(this);
+        }
+    }
 }
 
 export function effect(fn) {
@@ -45,6 +53,11 @@ export function effect(fn) {
     const _effect = new ReactiveEffect(fn);
     // 默认先执行一次
     _effect.run();
+    // 将this指向当前effect实例
+    const runner = _effect.run.bind(_effect);
+    // 将effect实例挂载到runner函数对象的effect属性中
+    runner.effect = _effect;
+    return runner;
 }
 
 // 多对多关系：一个effect对应多个属性 一个属性对应多个effect

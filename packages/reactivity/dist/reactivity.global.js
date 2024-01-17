@@ -51,10 +51,20 @@ var VueReactivity = (() => {
         activeEffect = this.parent;
       }
     }
+    // 停止effect的收集 即不触发更新
+    stop() {
+      if (this.active) {
+        this.active = false;
+        cleanupEffect(this);
+      }
+    }
   };
   function effect(fn) {
     const _effect = new ReactiveEffect(fn);
     _effect.run();
+    const runner = _effect.run.bind(_effect);
+    runner.effect = _effect;
+    return runner;
   }
   var targetMap = /* @__PURE__ */ new WeakMap();
   function track(target, type, key) {
