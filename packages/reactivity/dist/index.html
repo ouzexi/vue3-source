@@ -12,15 +12,19 @@
         // effect表示副作用函数 如果此函数依赖的数据发生变化会触发执行
         // reactive将数据变成响应式 proxy
         const { effect, reactive } = VueReactivity;
-        const data = { name: 'zf', age: 13, address: { num: 517 } };
+        const data = { flag: true, name: 'jw', age: 30 };
         const state = reactive(data);
         effect(() => {
-            // state.age = Math.random()
-            app.innerHTML = state.name + '今年' + state.age + '岁了';
-        })
+            console.log('render')
+            app.innerHTML = state.flag ? state.name : state.age;
+        });
 
         setTimeout(() => {
-            state.age = 14
+            state.flag = false;
+            setTimeout(() => {
+                console.log('修改name，原则上不更新，因为模板没有用到')
+                state.name = 'zf'
+            }, 2000);
         }, 2000)
     </script>
 </body>

@@ -20,7 +20,18 @@ class ReactiveEffect {
             // 依赖收集 核心是将当前effect和稍后渲染的属性关联在一起
             // 获取到全局的activeEffect
             activeEffect = this;
-            return this.fn();   
+            
+            // 需要在执行fn前将fn之前收集的属性清空
+            /* 
+            effect(() => {
+                app.innerHTML = state.flag ? state.name : state.age;
+            });
+            比如第一次渲染state.flag为true，模板使用到state.name name收集依赖
+            把state.flag设为false，之后渲染模板不使用state.name 但因为name还存在依赖 所以改变name会触发effect执行
+            所以每次effect执行前要把上一次收集的依赖先清除
+            */
+            cleanupEffect(this);
+            return this.fn();
         } finally {
             // 执行完后有外层activeEffect则赋值 没有则清空
             activeEffect = this.parent;
@@ -64,8 +75,16 @@ export function trigger(target, type, key, value, oldValue) {
     const depsMap = targetMap.get(target);
     // 说明触发的值没有在模板中使用 不需要触发更新
     if(!depsMap) return;
-    const effects = depsMap.get(key);
-    effects && effects.forEach(effect => {
+    let effects = depsMap.get(key);
+    // 在执行之前 先拷贝一份来执行 不要关联引用
+    /* 
+    比如effect调用run方法时 会先调用cleanupEffect清空上一次执行依赖的属性
+    此时Set会调用delete删除 之后调用fn会触发track Set会调用add添加dep
+    对于Set特性来说 一边删除一边添加会造成死循环 如 let a = new Set(1); a.forEach(() => { a.delete(1); a.add(1); })
+    所以需要拷贝
+    */
+    effects = new Set(effects);
+    effects.forEach(effect => {
         /* 
         比如：
         effect(() => {
@@ -77,6 +96,15 @@ export function trigger(target, type, key, value, oldValue) {
         */
         if(effect !== activeEffect) effect.run();
     })
+}
+
+function cleanupEffect(effect) {
+    // 比如name属性 deps保存的name对应的effect 需要先清除再将deps置为空 不能直接effect.deps = [];
+    const { deps } = effect;
+    for(let i = 0; i < deps.length; i++) {
+        deps[i].delete(effect);
+    }
+    effect.deps.length = 0;
 }
 
 /* 
