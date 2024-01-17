@@ -93,9 +93,11 @@ var VueReactivity = (() => {
     effects = new Set(effects);
     effects.forEach((effect2) => {
       if (effect2 !== activeEffect) {
-        effect2.scheduler();
-      } else {
-        effect2.run();
+        if (effect2.scheduler) {
+          effect2.scheduler();
+        } else {
+          effect2.run();
+        }
       }
     });
   }

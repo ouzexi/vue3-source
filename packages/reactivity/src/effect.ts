@@ -110,9 +110,11 @@ export function trigger(target, type, key, value, oldValue) {
 
         // 如果用户传入了调度函数 则调用调度函数 否则默认刷新视图
         if(effect !== activeEffect) {
-            effect.scheduler();
-        } else {
-            effect.run();
+            if(effect.scheduler) {
+                effect.scheduler();
+            } else {
+                effect.run();
+            }
         }
     })
 }
