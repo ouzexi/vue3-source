@@ -12,7 +12,7 @@
         // effect表示副作用函数 如果此函数依赖的数据发生变化会触发执行
         // reactive将数据变成响应式 proxy
         const { effect, reactive } = VueReactivity;
-        const data = { flag: true, name: 'jw', age: 30 };
+        const data = { flag: true, name: 'jw', age: 30, address: { num: 10 } };
         const state = reactive(data);
         let waiting = false;
         let runner = effect(() => {
@@ -37,6 +37,7 @@
         state.age = 3000;
         state.age = 4000;
         state.age = 5000;
+        console.log(state.address)
     </script>
 </body>
 </html>
