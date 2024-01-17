@@ -13,9 +13,15 @@
         // reactive将数据变成响应式 proxy
         const { effect, reactive } = VueReactivity;
         const data = { name: 'zf', age: 13, address: { num: 517 } };
-        const state1 = reactive(data);
-        const state2 = reactive(state1);
-        console.log(state1, state1 === state2);
+        const state = reactive(data);
+        effect(() => {
+            // state.age = Math.random()
+            app.innerHTML = state.name + '今年' + state.age + '岁了';
+        })
+
+        setTimeout(() => {
+            state.age = 14
+        }, 2000)
     </script>
 </body>
 </html>
