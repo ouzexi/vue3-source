@@ -28,8 +28,9 @@ var VueReactivity = (() => {
   var activeEffect = void 0;
   var ReactiveEffect = class {
     // public fn 为ts语法糖 相当于this.fn = fn;
-    constructor(fn) {
+    constructor(fn, scheduler) {
       this.fn = fn;
+      this.scheduler = scheduler;
       this.parent = null;
       // 表示当前effect默认为激活状态
       this.active = true;
@@ -59,8 +60,8 @@ var VueReactivity = (() => {
       }
     }
   };
-  function effect(fn) {
-    const _effect = new ReactiveEffect(fn);
+  function effect(fn, options = {}) {
+    const _effect = new ReactiveEffect(fn, options.scheduler);
     _effect.run();
     const runner = _effect.run.bind(_effect);
     runner.effect = _effect;
@@ -91,8 +92,11 @@ var VueReactivity = (() => {
     let effects = depsMap.get(key);
     effects = new Set(effects);
     effects.forEach((effect2) => {
-      if (effect2 !== activeEffect)
+      if (effect2 !== activeEffect) {
+        effect2.scheduler();
+      } else {
         effect2.run();
+      }
     });
   }
   function cleanupEffect(effect2) {

@@ -17,15 +17,26 @@
         let waiting = false;
         let runner = effect(() => {
             app.innerHTML = state.age;
+        }, {
+            // 自定义调度器 自己决定如何更新
+            scheduler() {
+                console.log('run');
+                if(!waiting) {
+                    waiting = true;
+                    setTimeout(() => {
+                        console.log('only called once')
+                        runner();
+                        waiting = false;
+                    })
+                }
+            }
         });
 
-        runner.effect.stop();
-        setTimeout(() => {
-            state.age = 1000;
-            setTimeout(() => {
-                runner()
-            }, 2000)
-        }, 1000)
+        state.age = 1000;
+        state.age = 2000;
+        state.age = 3000;
+        state.age = 4000;
+        state.age = 5000;
     </script>
 </body>
 </html>

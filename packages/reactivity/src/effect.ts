@@ -6,7 +6,7 @@ class ReactiveEffect {
     // 保存某个属性对应的Set 便于后续解除跟踪 直接清除Set
     public deps = [];
     // public fn 为ts语法糖 相当于this.fn = fn;
-    constructor(public fn) {
+    constructor(public fn, public scheduler) {
     }
 
     // 执行effect的方法
@@ -47,10 +47,10 @@ class ReactiveEffect {
     }
 }
 
-export function effect(fn) {
+export function effect(fn, options: any = {}) {
     // fn根据状态变化重新执行 effect可以嵌套
     // 创建响应式effect
-    const _effect = new ReactiveEffect(fn);
+    const _effect = new ReactiveEffect(fn, options.scheduler);
     // 默认先执行一次
     _effect.run();
     // 将this指向当前effect实例
@@ -107,7 +107,13 @@ export function trigger(target, type, key, value, oldValue) {
         run方法保存当前effect 并且run方法导致fn即() => { state.age = Math.random() }重新执行
         导致无限循环 所以要判断全局effect是否和当前需执行的effect相同 是的话就只执行一次即可
         */
-        if(effect !== activeEffect) effect.run();
+
+        // 如果用户传入了调度函数 则调用调度函数 否则默认刷新视图
+        if(effect !== activeEffect) {
+            effect.scheduler();
+        } else {
+            effect.run();
+        }
     })
 }
 
