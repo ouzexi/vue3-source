@@ -25,12 +25,49 @@ var VueReactivity = (() => {
   });
 
   // packages/reactivity/src/effect.ts
-  function effect() {
+  var activeEffect = void 0;
+  var ReactiveEffect = class {
+    constructor(fn) {
+      this.fn = fn;
+      // 表示当前effect默认为激活状态
+      this.active = true;
+      this.fn = fn;
+    }
+    // 执行effect的方法
+    run() {
+      if (!this.active) {
+        this.fn();
+      }
+      ;
+      try {
+        activeEffect = this;
+        return this.fn();
+      } finally {
+        activeEffect = void 0;
+      }
+    }
+  };
+  function effect(fn) {
+    const _effect = new ReactiveEffect(fn);
+    _effect.run();
   }
 
   // packages/shared/src/index.ts
   var isObject = (val) => {
     return typeof val === "object" && val !== null;
+  };
+
+  // packages/reactivity/src/baseHandler.ts
+  var mutableHandler = {
+    get(target, key, receiver) {
+      if (key === "__v_isReactive" /* IS_REACTIVE */) {
+        return true;
+      }
+      return Reflect.get(target, key, receiver);
+    },
+    set(target, key, value, receiver) {
+      return Reflect.set(target, key, value, receiver);
+    }
   };
 
   // packages/reactivity/src/reactive.ts
@@ -44,17 +81,7 @@ var VueReactivity = (() => {
     let existingProxy = reactiveMap.get(target);
     if (existingProxy)
       return existingProxy;
-    const proxy = new Proxy(target, {
-      get(target2, key, receiver) {
-        if (key === "__v_isReactive" /* IS_REACTIVE */) {
-          return true;
-        }
-        return Reflect.get(target2, key, receiver);
-      },
-      set(target2, key, value, receiver) {
-        return Reflect.set(target2, key, value, receiver);
-      }
-    });
+    const proxy = new Proxy(target, mutableHandler);
     reactiveMap.set(target, proxy);
     return proxy;
   }

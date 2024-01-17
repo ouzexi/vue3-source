@@ -1,10 +1,7 @@
 import { isObject } from "@vue/shared";
-
+import { ReactiveFlags, mutableHandler } from "./baseHandler";
 // 将源对象生成的代理对象存起来 之后传入同一个源对象时不需要new新的代理对象 可直接复用
 const reactiveMap = new WeakMap();
-const enum ReactiveFlags {
-    IS_REACTIVE = '__v_isReactive'
-};
 
 // 将数据转化成响应式的数据
 export function reactive(target) {
@@ -19,20 +16,7 @@ export function reactive(target) {
     let existingProxy = reactiveMap.get(target);
     if(existingProxy) return existingProxy;
 
-    const proxy = new Proxy(target, {
-        get(target, key, receiver) {
-            // 代理对象（Proxy）__v_isReactive属性一定返回true
-            if(key === ReactiveFlags.IS_REACTIVE) {
-                return true;
-            }
-
-            return Reflect.get(target, key, receiver);
-        },
-        set(target, key, value, receiver) {
-            // 设置值成功会返回true
-            return Reflect.set(target, key, value, receiver);
-        }
-    });
+    const proxy = new Proxy(target, mutableHandler);
     reactiveMap.set(target, proxy);
     return proxy;
 }
