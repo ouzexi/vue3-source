@@ -24,7 +24,7 @@ build({
     bundle: true,   // 把所有的包全部打包到一起
     sourcemap: true,    // 输出sourcemap
     format: outputFormat, // 打包输出的格式
-    globalName: pkg.buildOptions?.name, // 打包后的全局名称 比如reactivity模块打包后是var VueReactivity = (function(){})()
+    globalName: pkg.buildOptions?.name, // 打包后的可以使用的全局变量 比如reactivity模块打包后是var VueReactivity = (function(){})()
     platform: format === 'cjs' ? 'node' : 'browser', // 打包输出适用的平台
 }).then(() => { // 打包完毕后触发
     console.log('watching~~~')
