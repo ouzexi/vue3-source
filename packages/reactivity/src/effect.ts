@@ -79,12 +79,14 @@ export function track(target, type, key) {
 }
 
 export function trackEffects(dep) {
-    // 去重 比如某个effect多次用到某个key 只需跟踪一次：effect(() => { state.name; state.name; state.name;  })
-    let shouldTrack = !dep.has(activeEffect);
-    // 双向记录 属性记录多个effect / effect记录多个属性对应的Set
-    if(shouldTrack) {
-        dep.add(activeEffect);
-        activeEffect.deps.push(dep);
+    if(activeEffect) {
+        // 去重 比如某个effect多次用到某个key 只需跟踪一次：effect(() => { state.name; state.name; state.name;  })
+        let shouldTrack = !dep.has(activeEffect);
+        // 双向记录 属性记录多个effect / effect记录多个属性对应的Set
+        if(shouldTrack) {
+            dep.add(activeEffect);
+            activeEffect.deps.push(dep);
+        }
     }
 }
 
