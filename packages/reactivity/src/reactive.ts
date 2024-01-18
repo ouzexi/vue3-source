@@ -3,6 +3,10 @@ import { ReactiveFlags, mutableHandler } from "./baseHandler";
 // 将源对象生成的代理对象存起来 之后传入同一个源对象时不需要new新的代理对象 可直接复用
 const reactiveMap = new WeakMap();
 
+export function isReactive(value) {
+    return !!(value && value[ReactiveFlags.IS_REACTIVE]);
+}
+
 // 将数据转化成响应式的数据
 export function reactive(target) {
     if(!isObject(target)) {
