@@ -18,6 +18,14 @@ importers:
         specifier: ^5.3.3
         version: 5.3.3
 
+  packages/reactivity: {}
+
+  packages/runtime-core: {}
+
+  packages/runtime-dom: {}
+
+  packages/shared: {}
+
 packages:
 
   /@esbuild/aix-ppc64@0.19.11:
