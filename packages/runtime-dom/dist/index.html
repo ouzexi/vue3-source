@@ -10,8 +10,12 @@
     <script src="./runtime-dom.global.js"></script>
     <script>
         let { h, render } = VueRuntimeDOM;
-        const vnode = h('div', { style: { 'color': 'red' }, onClick: () => alert(1) }, [h('span', 'hello'), 'world']);
+        const vnode = h('div', { style: { 'color': 'red' }, onClick: () => alert(1) }, [h('span', 'hello'), ' world']);
         render(vnode, app);
+
+        setTimeout(() => {
+            render(null, app);
+        }, 2000)
     </script>
 </body>
 </html>
