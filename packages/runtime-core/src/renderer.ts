@@ -1,5 +1,5 @@
 import { ShapeFlags, isString } from "@vue/shared";
-import { Text, createVnode } from "./vnode";
+import { Text, createVnode, isSameVnode } from "./vnode";
 
 export function createRenderer(renderOptions) {
 
@@ -52,26 +52,73 @@ export function createRenderer(renderOptions) {
         if(n1 == null) {
             n2.el = hostCreateText(n2.children);
             hostInsert(n2.el, container);
+        } else {
+            // 文本内容改变 复用老节点 仅改变节点内文本
+            const el = n2.el = n1.el;
+            if(n1.children !== n2.children) {
+                hostSetText(el, n2.children);
+            }
+        }
+    }
+
+    const patchProps = (oldProps, newProps, el) => {
+        // 新的节点有的属性 直接覆盖旧的节点
+        for(let key in newProps) {
+            hostPatchProp(el, key, oldProps[key], newProps[key]);
+        }
+        // 如果新的节点没有属性 在旧的节点里面有 删除
+        for(let key in oldProps) {
+            if(newProps[key] == null) {
+                hostPatchProp(el, key, oldProps[key], null);
+            }
+        }
+    }
+
+    const patchChildren = (n1, n2, el) => {
+       const c1 = n1 && n1.children; 
+       const c2 = n2 && n2.children;
+       // 子节点可能为 文本 空 数组 
+    }
+
+    // 老的节点和新的节点一样 复用老的 属性可能不一样 更新属性
+    const patchElement = (n1, n2) => {
+        let el = n2.el = n1.el;
+
+        let oldProps = n1.props || {};
+        let newProps = n2.props || {};
+
+        patchProps(oldProps, newProps, el);
+        // 父层级比较完毕 再比较子层级
+        patchChildren(n1, n2, el);
+    }
+
+    const processElement = (n1, n2, container) => {
+        if(n1 === null) {
+            mountElement(n2, container);
+        } else {
+            patchElement(n1, n2);
         }
     }
 
     const patch = (n1, n2, container) => {
         if(n1 === n2) return;
 
+        // 如果前后节点不一样 删除老的 添加新的
+        if(n1 && !isSameVnode(n1, n2)) {
+            unmount(n1);
+            n1 = null;
+        }
+
         const { type, shapeFlag } = n2;
         // 初次渲染 挂载元素
-        if(n1 == null) {
-            switch(type) {
-                case Text:
-                    processText(n1, n2, container);
-                    break;
-                default:
-                    if(shapeFlag & ShapeFlags.ELEMENT) {
-                        mountElement(n2, container);
-                    }
-            }
-        } else {
-
+        switch(type) {
+            case Text:
+                processText(n1, n2, container);
+                break;
+            default:
+                if(shapeFlag & ShapeFlags.ELEMENT) {
+                    processElement(n1, n2, container);
+                }
         }
     }
 
@@ -98,3 +145,8 @@ export function createRenderer(renderOptions) {
         render
     } 
 }
+
+// 更新的逻辑
+// - 如果前后节点不一样 删除老的 添加新的
+// - 老的节点和新的节点一样 复用老的 属性可能不一样 更新属性
+// - 父层级比较完毕 再比较子层级
