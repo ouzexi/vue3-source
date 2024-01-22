@@ -10,8 +10,8 @@
     <script src="./runtime-dom.global.js"></script>
     <script>
         let { createRenderer, h, render } = VueRuntimeDOM;
-        console.log(createRenderer, h, render);
-        // render(h('h1', { style: { color: 'red' } }, 'hello'), app)
+        const vnode = h('div', [h('span'), h('span')]);
+        console.log('vnode：', vnode)
     </script>
 </body>
 </html>
