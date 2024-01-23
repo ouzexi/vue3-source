@@ -134,6 +134,48 @@ export function createRenderer(renderOptions) {
                 }
             }
         }
+        // 乱序比对
+        let s1 = i;
+        let s2 = i;
+        const keyToNewIndexMap = new Map();
+        for(let i = s2; i <= e2; i++) {
+            keyToNewIndexMap.set(c2[i].key, i);
+        }
+        // 循环老的元素 看下新的有没有 如果有说明要比较差异 没有要新增到列表 老的有新的没有就删除
+        // 需要乱序比较的节点个数
+        const toBePatched = e2 - s2 + 1;
+        // 记录新节点在老节点列表中的位置 有则大于0 没有则为0
+        const newIndexToOldIndexMap = new Array(toBePatched).fill(0);
+        for(let i = s1; i <= e1; i++) {
+            const oldChild = c1[i];
+            // 用老的孩子去新孩子映射表（key -> idx）找
+            let newIndex = keyToNewIndexMap.get(oldChild.key);
+            if(newIndex == undefined) {
+                // 老的有新的没有就删除
+                unmount(oldChild);
+            } else {
+                // 新的位置对应老的位置 如果数组里放的值大于0说明patch
+                // i+1是因为考虑到当前节点在老节点列表中下标为0 要区分所以+1避免存值为0
+                newIndexToOldIndexMap[newIndex-s2] = i+1;
+                // 如果有说明要比较差异
+                patch(oldChild, c2[newIndex], el);
+            }
+        }
+        // 需要移动处理 从后往前插 因为从前往后插的话获取不到anchor
+        for(let i = toBePatched-1; i >= 0; i--) {
+            // 获取新节点原位置 获取当前节点
+            let index = i + s2;
+            let current = c2[index];
+            let anchor = index + 1 < c2.length ? c2[index+1].el : null;
+            if(newIndexToOldIndexMap[i] === 0) {
+                // 新的节点没有在老节点列表中 创建
+                patch(null, current, el, anchor);
+            } else {
+                // 否则说明已经patch过新老节点（即新节点已复用老节点且属性已变更）
+                hostInsert(current.el, el, anchor);
+            }
+        }
+
     }
 
     const patchChildren = (n1, n2, el) => {
