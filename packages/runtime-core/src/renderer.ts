@@ -31,7 +31,7 @@ export function createRenderer(renderOptions) {
         }
     }
 
-    const mountElement = (vnode, container) => {
+    const mountElement = (vnode, container, anchor) => {
         const { type, props, children, shapeFlag } = vnode;
         // 将真实dom挂载到虚拟dom的el属性上 便于后续更新复用
         let el = vnode.el = hostCreateElement(type);
@@ -46,7 +46,7 @@ export function createRenderer(renderOptions) {
         } else if(shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
             mountChildren(children, el);
         }
-        hostInsert(el, container);
+        hostInsert(el, container, anchor);
     }
 
     const processText = (n1, n2, container) => {
@@ -70,7 +70,7 @@ export function createRenderer(renderOptions) {
         // 如果新的节点没有属性 在旧的节点里面有 删除
         for(let key in oldProps) {
             if(newProps[key] == null) {
-                hostPatchProp(el, key, oldProps[key], null);
+                hostPatchProp(el, key, oldProps[key], undefined);
             }
         }
     }
@@ -78,6 +78,61 @@ export function createRenderer(renderOptions) {
     const unmountChildren = (children) => {
         for(let i = 0; i < children.length; i++) {
             unmount(children[i]);
+        }
+    }
+
+    const patchKeyedChildren = (c1, c2, el) => {
+        // 先两边往中间聚 遇到差异就跳出循环 新老节点头指针都为i 尾指针为各自尾部
+        let i = 0;
+        let e1 = c1.length - 1;
+        let e2 = c2.length - 1;
+        
+        // sync from start
+        while(i <= e1 && i <= e2) {
+            const n1 = c1[i];
+            const n2 = c2[i];
+            if(isSameVnode(n1, n2)) {
+                patch(n1, n2, el);
+            } else {
+                break;
+            }
+            i++;
+        }
+
+        // sync from end
+        while(i <= e1 && i <= e2) {
+            const n1 = c1[e1];
+            const n2 = c2[e2];
+            if(isSameVnode(n1, n2)) {
+                patch(n1, n2, el);
+            } else {
+                break;
+            }
+            e1--;
+            e2--;
+        }
+
+        // common sequence + mount
+        // i比e1大说明有新增的 i到e2之间是新增的部分 如果e2后面一位有元素 说明是头插 否则尾插
+        if(i > e1) {
+            if(i <= e2) {
+                while(i <= e2) {
+                    const nextPos = e2 + 1;
+                    const anchor = nextPos < c2.length ? c2[nextPos].el : null;
+                    patch(null, c2[i], el, anchor);
+                    i++;
+                }
+            }
+        }
+        // common sequence + unmount
+        // i比e2大说明有卸载的 i到e1之间是卸载的部分
+        else if(i > e2) {
+            if(i <= e1) {
+                while(i <= e1) {
+                    unmount(c1[i]);
+                    i++;
+                }
+            }
         }
     }
 
@@ -109,6 +164,7 @@ export function createRenderer(renderOptions) {
         if(prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
             if(shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
                 // diff算法
+                patchKeyedChildren(c1, c2, el);
             } else {
                 unmountChildren(c1);
             }
@@ -135,15 +191,15 @@ export function createRenderer(renderOptions) {
         patchChildren(n1, n2, el);
     }
 
-    const processElement = (n1, n2, container) => {
+    const processElement = (n1, n2, container, anchor) => {
         if(n1 === null) {
-            mountElement(n2, container);
+            mountElement(n2, container, anchor);
         } else {
             patchElement(n1, n2);
         }
     }
 
-    const patch = (n1, n2, container) => {
+    const patch = (n1, n2, container, anchor = null) => {
         if(n1 === n2) return;
 
         // 如果前后节点不一样 删除老的 添加新的
@@ -160,7 +216,7 @@ export function createRenderer(renderOptions) {
                 break;
             default:
                 if(shapeFlag & ShapeFlags.ELEMENT) {
-                    processElement(n1, n2, container);
+                    processElement(n1, n2, container, anchor);
                 }
         }
     }

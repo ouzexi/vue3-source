@@ -10,11 +10,24 @@
     <script src="./runtime-dom.global.js"></script>
     <script>
         let { h, render } = VueRuntimeDOM;
-        render(h('h1', {style:{'color':'red'}}, ['1111', '3333']), app);
-
+        render(
+            h('h1', {style: {color: 'red'}}, [
+                h('li', {key: 'd'}, 'd'),
+                h('li', {key: 'a'}, 'a'),
+                h('li', {key: 'b'}, 'b'),
+                h('li', {key: 'c'}, 'c'),
+            ])
+        ,app)
+        
         setTimeout(() => {
-            render(h('h1', {style:{'color':'blue', 'background': 'red'}}, '2222'), app);
-        }, 2000)
+            render(
+                h('h1', {style: {color: 'blue', background: 'red'}}, [
+                    h('li', {key: 'a'}, 'a'),
+                    h('li', {key: 'b'}, 'b'),
+                    h('li', {key: 'c'}, 'c'),
+                ])
+            ,app)
+        }, 4000)
     </script>
 </body>
 </html>
