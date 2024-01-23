@@ -10,7 +10,7 @@
     <script src="./runtime-dom.global.js"></script>
     <script>
         let { h, render } = VueRuntimeDOM;
-        render(h('h1', {style:{'color':'red'}}, '1111'), app);
+        render(h('h1', {style:{'color':'red'}}, ['1111', '3333']), app);
 
         setTimeout(() => {
             render(h('h1', {style:{'color':'blue', 'background': 'red'}}, '2222'), app);

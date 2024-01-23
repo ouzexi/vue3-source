@@ -15,17 +15,18 @@ export function createRenderer(renderOptions) {
         patchProp: hostPatchProp
     } = renderOptions;
 
-    const normalize = (child) => {
+    const normalize = (children, i) => {
         // 如果子节点是文本 要包装成Text类型元素
-        if(isString(child)) {
-            return createVnode(Text, null, child);
+        if(isString(children[i])) {
+            let vnode = createVnode(Text, null, children[i]);
+            children[i] = vnode;
         }
-        return child;
+        return children[i];
     }
 
     const mountChildren = (children, container) => {
         for(let i = 0; i < children.length; i++) {
-            let child = normalize(children[i]);
+            let child = normalize(children, i);
             patch(null, child, container);
         }
     }
@@ -74,10 +75,52 @@ export function createRenderer(renderOptions) {
         }
     }
 
+    const unmountChildren = (children) => {
+        for(let i = 0; i < children.length; i++) {
+            unmount(children[i]);
+        }
+    }
+
     const patchChildren = (n1, n2, el) => {
        const c1 = n1 && n1.children; 
        const c2 = n2 && n2.children;
+       const prevShapeFlag = n1.shapeFlag;
+       const shapeFlag = n2.shapeFlag;
        // 子节点可能为 文本 空 数组 
+       // 比较新老子节点的差异
+       // 新的    老的
+       // 文本    数组    （删除老节点儿子 设置文本内容）
+       // 文本    文本    （更新文本即可）
+       // 数组    数组    （diff算法）
+       // 数组    文本    （清空文本 进行挂载）
+       // 空      数组    （删除所有儿子）
+       // 空      文本    （清空文本）
+       // 空      空      （无操作）
+
+       if(shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+            if(prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+                unmountChildren(c1);
+            }
+            if(c1 !== c2) {
+                hostSetElementText(el, c2);
+            }
+       } else {
+        // 新儿子可能为数组或者空
+        if(prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+            if(shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+                // diff算法
+            } else {
+                unmountChildren(c1);
+            }
+        } else {
+            if(prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+                hostSetElementText(el, '');
+            }
+            if(shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+                mountChildren(c2, el);
+            }
+        }
+       }
     }
 
     // 老的节点和新的节点一样 复用老的 属性可能不一样 更新属性
