@@ -1,5 +1,6 @@
 import { ShapeFlags, isString } from "@vue/shared";
 import { Text, createVnode, isSameVnode } from "./vnode";
+import { getSequence } from "./sequence";
 
 export function createRenderer(renderOptions) {
 
@@ -146,6 +147,7 @@ export function createRenderer(renderOptions) {
         const toBePatched = e2 - s2 + 1;
         // 记录新节点在老节点列表中的位置 有则大于0 没有则为0
         const newIndexToOldIndexMap = new Array(toBePatched).fill(0);
+
         for(let i = s1; i <= e1; i++) {
             const oldChild = c1[i];
             // 用老的孩子去新孩子映射表（key -> idx）找
@@ -161,6 +163,13 @@ export function createRenderer(renderOptions) {
                 patch(oldChild, c2[newIndex], el);
             }
         }
+
+        // 获取最长递增子序列
+        let increment = getSequence(newIndexToOldIndexMap);
+
+        // 需要移动位置 比如toBePatched为[5, 3, 4, 0] / increment为[1, 2]
+        // 表示toBePatched从后往前插 遇到下标为1和2的节点（即3和4）不做移动
+        let j = increment.length - 1;
         // 需要移动处理 从后往前插 因为从前往后插的话获取不到anchor
         for(let i = toBePatched-1; i >= 0; i--) {
             // 获取新节点原位置 获取当前节点
@@ -171,8 +180,12 @@ export function createRenderer(renderOptions) {
                 // 新的节点没有在老节点列表中 创建
                 patch(null, current, el, anchor);
             } else {
-                // 否则说明已经patch过新老节点（即新节点已复用老节点且属性已变更）
-                hostInsert(current.el, el, anchor);
+                if(i != increment[j]) {
+                    // 否则说明已经patch过新老节点（即新节点已复用老节点且属性已变更）
+                    hostInsert(current.el, el, anchor);
+                } else {
+                    j--;
+                }
             }
         }
 
